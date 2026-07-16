@@ -1,4 +1,4 @@
-# Rabin Task Manager - iOS App With Appium SDET Framework
+# SDET Rabin AVidan Task Manager - iOS App With Appium Framework
 
 This repository is a compact iOS task manager application with a production-style mobile UI automation framework around it. The project demonstrates both application delivery and SDET ownership: testability-focused SwiftUI implementation, Appium real-device automation, Page Object Model structure, Allure reporting, logging, and CI/CD readiness.
 
