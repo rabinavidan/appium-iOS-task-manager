@@ -1,0 +1,7 @@
+DerivedData/
+build/
+
+java-ui-tests/target/
+java-ui-tests/.allure/
+
+.DS_Store

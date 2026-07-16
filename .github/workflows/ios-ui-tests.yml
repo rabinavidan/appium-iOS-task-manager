@@ -1,0 +1,152 @@
+name: iOS UI Tests
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ui_profile:
+        description: "JUnit profile to run on the self-hosted iPhone runner"
+        required: true
+        default: "smoke"
+        type: choice
+        options:
+          - smoke
+          - feature
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-compile-tests:
+    name: Build app and compile tests
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Build iOS app without signing
+        run: |
+          xcodebuild \
+            -scheme rabin-task-manager \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath /tmp/rabin-task-manager-derived-data \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Compile Java UI tests
+        working-directory: java-ui-tests
+        run: mvn test -DskipTests
+
+  real-device-smoke:
+    name: Real-device Appium UI tests
+    runs-on:
+      - self-hosted
+      - macOS
+      - ios-device
+    needs: build-and-compile-tests
+    if: github.event_name == 'workflow_dispatch'
+    timeout-minutes: 45
+
+    env:
+      APPIUM_SERVER_URL: http://127.0.0.1:4723
+      IOS_DEVICE_NAME: ${{ vars.IOS_DEVICE_NAME || 'iPhone' }}
+      IOS_PLATFORM_VERSION: ${{ vars.IOS_PLATFORM_VERSION }}
+      IOS_UDID: ${{ secrets.IOS_UDID }}
+      IOS_BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'rubisoft.rabin-task-manager' }}
+      IOS_XCODE_ORG_ID: ${{ secrets.IOS_XCODE_ORG_ID }}
+      IOS_XCODE_SIGNING_ID: ${{ vars.IOS_XCODE_SIGNING_ID || 'Apple Development' }}
+      IOS_UPDATED_WDA_BUNDLE_ID: ${{ vars.IOS_UPDATED_WDA_BUNDLE_ID }}
+      IOS_DERIVED_DATA_PATH: /tmp/rabin-task-manager-wda-derived-data
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Appium
+        run: |
+          npm install -g appium
+          appium driver install xcuitest || true
+
+      - name: Start Appium
+        run: |
+          DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+          appium --address 127.0.0.1 --port 4723 > /tmp/rabin-task-manager-appium.log 2>&1 &
+          echo $! > /tmp/rabin-task-manager-appium.pid
+          sleep 8
+
+      - name: Run Appium UI tests
+        working-directory: java-ui-tests
+        run: |
+          mvn test -P${{ inputs.ui_profile }} \
+            -Dappium.server.url="${APPIUM_SERVER_URL}" \
+            -Dios.device.name="${IOS_DEVICE_NAME}" \
+            -Dios.platform.version="${IOS_PLATFORM_VERSION}" \
+            -Dios.udid="${IOS_UDID}" \
+            -Dios.bundle.id="${IOS_BUNDLE_ID}" \
+            -Dios.derived.data.path="${IOS_DERIVED_DATA_PATH}" \
+            -Dios.show.xcode.log="true" \
+            -Dios.xcode.org.id="${IOS_XCODE_ORG_ID}" \
+            -Dios.xcode.signing.id="${IOS_XCODE_SIGNING_ID}" \
+            -Dios.xcode.config.file="${GITHUB_WORKSPACE}/java-ui-tests/wda-signing.xcconfig" \
+            -Dios.updated.wda.bundle.id="${IOS_UPDATED_WDA_BUNDLE_ID}" \
+            -Dios.allow.provisioning.device.registration="true" \
+            -Dios.wda.launch.timeout="180000" \
+            -Dios.wda.connection.timeout="180000" \
+            -Dios.wait.seconds="30"
+
+      - name: Generate Allure report
+        if: always()
+        working-directory: java-ui-tests
+        run: mvn allure:report
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ inputs.ui_profile }}
+          path: java-ui-tests/target/allure-report
+          if-no-files-found: ignore
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-artifacts-${{ inputs.ui_profile }}
+          path: |
+            java-ui-tests/target/allure-results
+            java-ui-tests/target/surefire-reports
+            java-ui-tests/target/logs
+            /tmp/rabin-task-manager-appium.log
+          if-no-files-found: ignore
+
+      - name: Stop Appium
+        if: always()
+        run: |
+          if [ -f /tmp/rabin-task-manager-appium.pid ]; then
+            kill "$(cat /tmp/rabin-task-manager-appium.pid)" || true
+          fi
