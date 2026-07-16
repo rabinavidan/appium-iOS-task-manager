@@ -2,6 +2,22 @@
 
 This repository is a compact iOS task manager application with a production-style mobile UI automation framework around it. The project demonstrates both application delivery and SDET ownership: testability-focused SwiftUI implementation, Appium real-device automation, Page Object Model structure, Allure reporting, logging, and CI/CD readiness.
 
+## Project Delivery Story
+
+This project started from a full product delivery flow, not only from test automation. I used Xcode together with AI Codex as an engineering assistant to plan, design, develop, and iterate on a SwiftUI task manager iOS application. After the app was implemented, it was installed and validated on a real iPhone before the automation framework was built around it.
+
+The delivery path was:
+
+1. Planned the task manager scope and core user flows.
+2. Designed a simple SwiftUI experience for creating and managing tasks.
+3. Developed the iOS application in Xcode.
+4. Added automation-friendly accessibility identifiers during app development.
+5. Installed and opened the app on a real iPhone.
+6. Built the Appium Java automation framework against the installed iOS app.
+7. Stabilized the framework through real-device execution, reporting, cleanup, and CI/CD readiness.
+
+This is important because the automation was not written against an abstract sample app. The application and the test framework evolved together, which reflects practical SDET ownership across product quality, testability, tooling, and delivery.
+
 ## Highlights
 
 | Area | Implementation |
@@ -166,11 +182,45 @@ Prerequisites:
 - Node.js and npm.
 - Appium with XCUITest driver.
 
-Install Appium:
+## Tool Installation
+
+Install or verify Xcode command line access:
+
+```sh
+xcode-select -p
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
+
+Install Java and Maven. With Homebrew:
+
+```sh
+brew install openjdk@17 maven
+java -version
+mvn -version
+```
+
+Install Node.js and npm. With Homebrew:
+
+```sh
+brew install node
+node -v
+npm -v
+```
+
+Install Appium server and the XCUITest driver:
 
 ```sh
 npm install -g appium
 appium driver install xcuitest
+appium -v
+appium driver list --installed
+```
+
+Allure is configured through Maven, so no global Allure installation is required for normal project usage:
+
+```sh
+cd java-ui-tests
+mvn allure:report
 ```
 
 Start Appium:

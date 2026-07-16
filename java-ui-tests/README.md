@@ -81,11 +81,44 @@ Feature tests:
 4. Node.js and npm.
 5. Appium and the XCUITest driver.
 
+## Tool Installation
+
+Verify Xcode is selected:
+
+```sh
+xcode-select -p
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
+
+Install Java 17 and Maven:
+
+```sh
+brew install openjdk@17 maven
+java -version
+mvn -version
+```
+
+Install Node.js and npm:
+
+```sh
+brew install node
+node -v
+npm -v
+```
+
 Install Appium:
 
 ```sh
 npm install -g appium
 appium driver install xcuitest
+appium -v
+appium driver list --installed
+```
+
+Allure is managed by Maven in this project:
+
+```sh
+mvn allure:report
 ```
 
 Start Appium:
