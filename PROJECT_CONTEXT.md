@@ -285,6 +285,10 @@ The requested device could not be found because no available devices matched the
   - `.github/workflows/ios-ui-tests.yml`
   - `build-and-compile-tests` runs on GitHub-hosted `macos-latest` and validates the Xcode build plus Java test compilation.
   - `real-device-smoke` runs manually on a self-hosted Mac with an unlocked iPhone and uploads Allure artifacts.
+- Mock backend/API:
+  - `mock-api/server.js` provides a dependency-free local REST API for tasks.
+  - `api-tests` is a separate Maven/JUnit 5 API automation layer.
+  - API coverage includes health, create, validation, read, complete, delete, and clear-all.
 - Report commands:
 
 ```sh

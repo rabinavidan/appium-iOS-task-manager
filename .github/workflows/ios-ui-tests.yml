@@ -46,6 +46,10 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Run API tests against mock backend
+        working-directory: api-tests
+        run: mvn test
+
       - name: Compile Java UI tests
         working-directory: java-ui-tests
         run: mvn test -DskipTests
