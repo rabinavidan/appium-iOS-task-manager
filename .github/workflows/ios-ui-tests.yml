@@ -103,11 +103,12 @@ jobs:
 
     env:
       APPIUM_SERVER_URL: http://127.0.0.1:4723
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
       IOS_DEVICE_NAME: ${{ vars.IOS_DEVICE_NAME || 'iPhone' }}
       IOS_PLATFORM_VERSION: ${{ vars.IOS_PLATFORM_VERSION }}
-      IOS_UDID: ${{ secrets.IOS_UDID }}
+      IOS_UDID: ${{ secrets.IOS_UDID || vars.IOS_UDID }}
       IOS_BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'rubisoft.rabin-task-manager' }}
-      IOS_XCODE_ORG_ID: ${{ secrets.IOS_XCODE_ORG_ID }}
+      IOS_XCODE_ORG_ID: ${{ secrets.IOS_XCODE_ORG_ID || vars.IOS_XCODE_ORG_ID }}
       IOS_XCODE_SIGNING_ID: ${{ vars.IOS_XCODE_SIGNING_ID || 'Apple Development' }}
       IOS_UPDATED_WDA_BUNDLE_ID: ${{ vars.IOS_UPDATED_WDA_BUNDLE_ID }}
       IOS_DERIVED_DATA_PATH: /tmp/rabin-task-manager-wda-derived-data
@@ -128,6 +129,55 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Validate real-device configuration
+        run: |
+          missing=0
+
+          if [ -z "${IOS_UDID}" ]; then
+            echo "::error title=Missing IOS_UDID::Set IOS_UDID in GitHub Actions Secrets or Variables. Without UDID, Appium falls back to simulator creation."
+            missing=1
+          fi
+
+          if [ -z "${IOS_PLATFORM_VERSION}" ]; then
+            echo "::error title=Missing IOS_PLATFORM_VERSION::Set IOS_PLATFORM_VERSION in GitHub Actions Variables, for example 26.5."
+            missing=1
+          fi
+
+          if [ -z "${IOS_XCODE_ORG_ID}" ]; then
+            echo "::error title=Missing IOS_XCODE_ORG_ID::Set IOS_XCODE_ORG_ID in GitHub Actions Secrets or Variables."
+            missing=1
+          fi
+
+          if [ -z "${IOS_UPDATED_WDA_BUNDLE_ID}" ]; then
+            echo "::error title=Missing IOS_UPDATED_WDA_BUNDLE_ID::Set IOS_UPDATED_WDA_BUNDLE_ID in GitHub Actions Variables."
+            missing=1
+          fi
+
+          xcode-select -p
+          xcodebuild -version
+
+          if [ "${missing}" -ne 0 ]; then
+            exit 1
+          fi
+
+          if ! xcrun xctrace list devices | grep -F "${IOS_UDID}"; then
+            echo "::error title=iPhone not visible to Xcode::Connect and unlock the iPhone, approve Trust This Computer, and make sure Developer Mode is enabled."
+            exit 1
+          fi
+
+          {
+            echo "## Real-Device Configuration"
+            echo ""
+            echo "| Key | Value |"
+            echo "| --- | --- |"
+            echo "| Device name | \`${IOS_DEVICE_NAME}\` |"
+            echo "| Platform version | \`${IOS_PLATFORM_VERSION}\` |"
+            echo "| Bundle id | \`${IOS_BUNDLE_ID}\` |"
+            echo "| UDID configured | yes |"
+            echo "| Xcode org id configured | yes |"
+            echo "| WDA bundle id | \`${IOS_UPDATED_WDA_BUNDLE_ID}\` |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Install Appium
         run: |
           npm install -g appium
@@ -135,7 +185,6 @@ jobs:
 
       - name: Start Appium
         run: |
-          DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
           appium --address 127.0.0.1 --port 4723 > /tmp/rabin-task-manager-appium.log 2>&1 &
           echo $! > /tmp/rabin-task-manager-appium.pid
           sleep 8
