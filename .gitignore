@@ -3,5 +3,7 @@ build/
 
 java-ui-tests/target/
 java-ui-tests/.allure/
+api-tests/target/
+api-tests/.allure/
 
 .DS_Store

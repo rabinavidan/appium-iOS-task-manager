@@ -23,12 +23,13 @@ This is important because the automation was not written against an abstract sam
 | Area | Implementation |
 | --- | --- |
 | iOS app | SwiftUI task manager with local persistence |
-| Automation | Java, Maven, JUnit 5, Appium, Selenium, XCUITest |
+| Automation | Java, Maven, JUnit 5, Appium, Selenium, XCUITest, API tests |
 | Design pattern | Layered framework with Page Object Model and business flows |
 | Reporting | Allure reports with nested step flow, screenshots, page source, and logs |
 | Logging | Logback test logs attached to failures |
 | CI/CD | GitHub Actions for app build, test compile, and self-hosted real-device execution |
 | Device target | Real iPhone execution through WebDriverAgent |
+| Backend | Local mock REST API for API-layer testing |
 
 ## Application Scope
 
@@ -80,6 +81,36 @@ Layer responsibilities:
 | `tests` | Keeps test intent clean with JUnit and Allure metadata |
 | `reporting` | Captures screenshots, page source, failure messages, and logs |
 
+## Mock Backend And API Test Layer
+
+The project also includes a local mock REST API so the portfolio demonstrates more than mobile UI automation.
+
+```text
+mock-api/
+  server.js
+
+api-tests/src/test/java/com/rabin/taskmanager/api/
+  config/    API runtime configuration
+  client/    Java HTTP client wrapper
+  models/    API request and response DTOs
+  support/   Mock server lifecycle and health checks
+  tests/     API smoke and feature tests
+```
+
+Mock API endpoints:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Service health check |
+| `GET` | `/tasks` | List tasks |
+| `POST` | `/tasks` | Create task |
+| `GET` | `/tasks/{id}` | Read task by id |
+| `PATCH` | `/tasks/{id}` | Update task completion, notes, or priority |
+| `DELETE` | `/tasks/{id}` | Delete one task |
+| `DELETE` | `/tasks` | Clear all tasks |
+
+API tests start the mock API automatically, validate the contract, and stop it after the suite.
+
 ## Test Coverage
 
 Smoke coverage:
@@ -100,6 +131,16 @@ Feature coverage:
 - Single-task deletion.
 - Clear all tasks.
 - Cleanup after test class execution.
+
+API coverage:
+
+- Health check.
+- Create task contract.
+- Required title validation.
+- Read task by id.
+- Complete task through PATCH.
+- Delete task.
+- Clear all tasks.
 
 Latest local validation:
 
@@ -145,7 +186,7 @@ Pipeline layers:
 
 | Job | Runner | Purpose |
 | --- | --- | --- |
-| `build-and-compile-tests` | GitHub-hosted `macos-latest` | Build the iOS app without signing and compile the Java test project |
+| `build-and-compile-tests` | GitHub-hosted `macos-latest` | Build the iOS app without signing, run API tests against the mock backend, and compile the Java UI test project |
 | `real-device-smoke` | Self-hosted Mac with iPhone | Start Appium, run smoke/feature tests, generate Allure, upload artifacts |
 
 Real-device Appium execution needs a self-hosted runner because GitHub-hosted macOS runners do not provide access to your physical iPhone.
@@ -223,6 +264,14 @@ cd java-ui-tests
 mvn allure:report
 ```
 
+Run API tests:
+
+```sh
+cd api-tests
+mvn test
+mvn allure:report
+```
+
 Start Appium:
 
 ```sh
@@ -274,11 +323,18 @@ This is not only a set of UI tests. It shows end-to-end SDET thinking:
 ```text
 .
 ├── .github/workflows/ios-ui-tests.yml
+├── api-tests/
+│   ├── pom.xml
+│   ├── README.md
+│   └── src/test/java/com/rabin/taskmanager/api/
 ├── java-ui-tests/
 │   ├── pom.xml
 │   ├── README.md
 │   ├── src/test/java/com/rabin/taskmanager/
 │   └── src/test/resources/
+├── mock-api/
+│   ├── README.md
+│   └── server.js
 ├── rabin-task-manager/
 │   ├── ContentView.swift
 │   ├── rabin_task_managerApp.swift
