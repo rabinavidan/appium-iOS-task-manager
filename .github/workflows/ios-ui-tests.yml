@@ -50,6 +50,43 @@ jobs:
         working-directory: api-tests
         run: mvn test
 
+      - name: Generate API Allure report
+        if: always()
+        working-directory: api-tests
+        run: mvn allure:report
+
+      - name: Upload API Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-allure-report
+          path: api-tests/target/allure-report
+          if-no-files-found: ignore
+
+      - name: Upload API test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-artifacts
+          path: |
+            api-tests/target/allure-results
+            api-tests/target/surefire-reports
+          if-no-files-found: ignore
+
+      - name: Publish API report summary
+        if: always()
+        run: |
+          {
+            echo "## API Test Report"
+            echo ""
+            echo "| Item | Location |"
+            echo "| --- | --- |"
+            echo "| Allure HTML report | Download artifact \`api-allure-report\` from this workflow run |"
+            echo "| Raw Allure and Surefire files | Download artifact \`api-test-artifacts\` from this workflow run |"
+            echo ""
+            echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Compile Java UI tests
         working-directory: java-ui-tests
         run: mvn test -DskipTests
@@ -147,6 +184,21 @@ jobs:
             java-ui-tests/target/logs
             /tmp/rabin-task-manager-appium.log
           if-no-files-found: ignore
+
+      - name: Publish UI report summary
+        if: always()
+        run: |
+          {
+            echo "## Real-Device UI Test Report"
+            echo ""
+            echo "| Item | Location |"
+            echo "| --- | --- |"
+            echo "| Test profile | \`${{ inputs.ui_profile }}\` |"
+            echo "| Allure HTML report | Download artifact \`allure-report-${{ inputs.ui_profile }}\` from this workflow run |"
+            echo "| Raw Allure, Surefire, logs, Appium log | Download artifact \`ui-test-artifacts-${{ inputs.ui_profile }}\` from this workflow run |"
+            echo ""
+            echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Stop Appium
         if: always()
