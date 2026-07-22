@@ -29,10 +29,16 @@ src/test/java/com/rabin/taskmanager/
     TasksScreen.java
   flows/
     TaskManagerFlow.java
+  hybrid/
+    HybridMockApiServer.java
+    HybridTaskApiClient.java
+    HybridTaskResponse.java
   tests/
     BaseIosTest.java
+    BaseHybridTest.java
     TaskManagerSmokeTest.java
     TaskManagerFeatureTest.java
+    TaskManagerHybridTest.java
   reporting/
     AllureArtifacts.java
     AllureFailureExtension.java
@@ -45,6 +51,7 @@ src/test/java/com/rabin/taskmanager/
 | `core` | Reusable actions, waits, scrolling, gestures, and timeout diagnostics |
 | `screens` | Page Object Model. Owns locators and screen-level actions |
 | `flows` | Business workflows consumed by tests |
+| `hybrid` | Lightweight mock API client and server lifecycle for cross-layer tests |
 | `tests` | JUnit tests, assertions, tags, and Allure metadata |
 | `reporting` | Failure screenshots, page source, logs, and Allure attachments |
 
@@ -54,6 +61,7 @@ src/test/java/com/rabin/taskmanager/
 | --- | --- | --- |
 | Smoke | `-Psmoke` | Critical happy paths and filter behavior |
 | Feature | `-Pfeature` | Broader functional coverage |
+| Hybrid | `-Phybrid` | Cross-layer contract validation using API and iOS UI together |
 
 Smoke tests:
 
@@ -72,6 +80,14 @@ Feature tests:
 - Persistence after app restart.
 - Single-task delete.
 - Clear all tasks.
+
+Hybrid tests:
+
+- API and iOS UI independently agree that a new task defaults to Medium priority and starts in the Open state.
+- Completing a UI task moves it to the Done filter.
+- API task created in the same run remains retrievable by id.
+
+The hybrid suite starts the mock API automatically before the test and stops it after. Node.js must be available on the `PATH`.
 
 ## Prerequisites
 
@@ -156,6 +172,12 @@ Run feature:
 
 ```sh
 mvn test -Pfeature
+```
+
+Run hybrid:
+
+```sh
+mvn test -Phybrid
 ```
 
 Compile without running device tests:

@@ -25,6 +25,7 @@ This is important because the automation was not written against an abstract sam
 | iOS app | SwiftUI task manager with local persistence |
 | Automation | Java, Maven, JUnit 5, Appium, Selenium, XCUITest, API tests |
 | Design pattern | Layered framework with Page Object Model and business flows |
+| Hybrid testing | Single test that exercises the API and iOS UI in one flow |
 | Reporting | Allure reports with nested step flow, screenshots, page source, and logs |
 | Logging | Logback test logs attached to failures |
 | CI/CD | GitHub Actions for app build, test compile, and self-hosted real-device execution |
@@ -65,6 +66,7 @@ java-ui-tests/src/test/java/com/rabin/taskmanager/
   core/        Low-level waits, locators, scrolling, gestures, diagnostics
   screens/     Page Object Model layer
   flows/       Business workflows used by tests
+  hybrid/      API client and mock server support for hybrid tests
   tests/       JUnit test classes and assertions
   reporting/   Allure attachments and failure handling
 ```
@@ -78,6 +80,7 @@ Layer responsibilities:
 | `core` | Provides reusable Appium actions with strong timeout diagnostics |
 | `screens` | Owns screen locators and UI operations through POM |
 | `flows` | Models business behavior such as add, complete, reopen, delete, clear |
+| `hybrid` | Lightweight mock API client and server lifecycle for cross-layer tests |
 | `tests` | Keeps test intent clean with JUnit and Allure metadata |
 | `reporting` | Captures screenshots, page source, failure messages, and logs |
 
@@ -141,6 +144,12 @@ API coverage:
 - Complete task through PATCH.
 - Delete task.
 - Clear all tasks.
+
+Hybrid coverage:
+
+- API and iOS UI independently enforce the same default priority (Medium) and open state for a new task.
+- UI task completion is verified through the Done filter.
+- API task remains retrievable by id after the UI flow completes.
 
 Latest local validation:
 
@@ -306,6 +315,14 @@ Run feature tests:
 mvn test -Pfeature
 ```
 
+Run hybrid tests:
+
+```sh
+mvn test -Phybrid
+```
+
+The hybrid suite requires a real device, Appium server, and Node.js (for the mock API, which the test starts automatically).
+
 ## Why This Project Is Interview-Ready
 
 This is not only a set of UI tests. It shows end-to-end SDET thinking:
@@ -314,6 +331,7 @@ This is not only a set of UI tests. It shows end-to-end SDET thinking:
 - Tests are isolated from locator details through POM.
 - Business workflows are reusable and readable.
 - The framework supports real-device WebDriverAgent signing and runtime configuration.
+- A hybrid test validates the same business contract through both the API and the iOS UI in one run.
 - Failures produce actionable diagnostics instead of only stack traces.
 - Allure gives a step-by-step execution story for debugging and demos.
 - CI/CD separates what can run on hosted runners from what requires physical device infrastructure.
@@ -331,6 +349,8 @@ This is not only a set of UI tests. It shows end-to-end SDET thinking:
 │   ├── pom.xml
 │   ├── README.md
 │   ├── src/test/java/com/rabin/taskmanager/
+│   │   ├── hybrid/
+│   │   └── tests/
 │   └── src/test/resources/
 ├── mock-api/
 │   ├── README.md
