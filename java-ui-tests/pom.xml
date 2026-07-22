@@ -10,6 +10,8 @@
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <appium.java.client.version>9.4.0</appium.java.client.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>

@@ -16,6 +16,7 @@ on:
         options:
           - smoke
           - feature
+          - hybrid
 
 permissions:
   contents: read
