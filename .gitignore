@@ -7,3 +7,5 @@ api-tests/target/
 api-tests/.allure/
 
 .DS_Store
+
+.idea/
